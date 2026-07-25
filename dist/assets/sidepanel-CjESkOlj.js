@@ -1,0 +1,1 @@
+import{r as e}from"./chunk-QTnfLwEv.js";import"./modulepreload-polyfill-Dezn_h7o.js";import{n as t,r as n,t as r}from"./src-ORZ7IhRU.js";import{t as i}from"./App-CghvWENF.js";var a=e(n(),1),o=e(t(),1),s=r();o.createRoot(document.getElementById(`root`)).render((0,s.jsx)(a.StrictMode,{children:(0,s.jsx)(i,{})}));

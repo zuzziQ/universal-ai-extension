@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+/*
+ * Intermediate palette tokens used across App.tsx.
+ * Default Tailwind only ships 50/100…900/950 — UI was written with
+ * 202/350/450/550/650/850/855/955 etc. Register them so styles actually apply.
+ */
+@theme {
+  --color-slate-202: #e2e8f0;
+  --color-slate-205: #e2e8f0;
+  --color-slate-305: #cbd5e1;
+  --color-slate-350: #94a3b8;
+  --color-slate-355: #94a3b8;
+  --color-slate-450: #64748b;
+  --color-slate-505: #64748b;
+  --color-slate-550: #475569;
+  --color-slate-650: #334155;
+  --color-slate-705: #1e293b;
+  --color-slate-750: #1e293b;
+  --color-slate-755: #1e293b;
+  --color-slate-850: #1a2332;
+  --color-slate-855: #151c2a;
+  --color-slate-955: #060a12;
+
+  --color-emerald-450: #34d399;
+  --color-emerald-955: #022c22;
+
+  --color-rose-405: #fb7185;
+  --color-rose-450: #fb7185;
+  --color-rose-455: #fb7185;
+  --color-rose-955: #4c0519;
+
+  --color-amber-955: #451a03;
+
+  --color-indigo-404: #818cf8;
+  --color-indigo-405: #818cf8;
+  --color-indigo-505: #6366f1;
+  --color-indigo-550: #4f46e5;
+  --color-indigo-650: #4338ca;
+  --color-indigo-955: #1e1b4b;
+
+  --color-purple-955: #2e1065;
+  --color-blue-955: #172554;
+  --color-violet-650: #6d28d9;
+  --color-sky-955: #082f49;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.22s ease-out;
+}
+
+@layer base {
+  body {
+    background-color: #030712;
+    color: #f3f4f6;
+    font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom scrollbars for a premium developer feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b0f19;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1f2937;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+/* Shimmer background animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 0.2s ease-out;
+}

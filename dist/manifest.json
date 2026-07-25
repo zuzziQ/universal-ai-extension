@@ -1,0 +1,183 @@
+{
+  "manifest_version": 3,
+  "name": "StoryMee Universal AI Director",
+  "version": "1.0.7",
+  "description": "Unified AI Director Assistant wrapping Dreamina, Picsart, TopView, and Google Labs",
+  "icons": {
+    "16": "public/icon16.png",
+    "32": "public/icon32.png",
+    "48": "public/icon48.png",
+    "128": "public/icon128.png"
+  },
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "unlimitedStorage",
+    "activeTab",
+    "scripting",
+    "webRequest",
+    "identity",
+    "identity.email",
+    "cookies",
+    "alarms",
+    "offscreen",
+    "downloads",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "browsingData"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://labs.google/*",
+    "https://labs.google.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://hub.storymee.com/*",
+    "*://*.storymee.com/*",
+    "*://*.googleapis.com/*",
+    "*://*.google.com/*",
+    "*://*.googleusercontent.com/*",
+    "https://*.dreamina.com/*",
+    "https://*.picsart.com/*",
+    "https://*.topview.ai/*",
+    "https://*.capcut.com/*",
+    "https://*.capcutapi.com/*"
+  ],
+  "background": {
+    "service_worker": "service-worker-loader.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "assets/content.ts-COmqAX5W.js"
+      ],
+      "matches": [
+        "https://labs.google/fx/*"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "js": [
+        "assets/inject_detector.ts-IGhWhgRB.js"
+      ],
+      "matches": [
+        "http://localhost:5173/*",
+        "http://127.0.0.1:5173/*",
+        "http://localhost:5174/*",
+        "http://127.0.0.1:5174/*",
+        "http://localhost:5175/*",
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*",
+        "http://localhost:3001/*",
+        "http://127.0.0.1:3001/*",
+        "http://localhost:3002/*",
+        "http://127.0.0.1:3002/*",
+        "https://hub.storymee.com/*",
+        "https://storyboard-workflow.vercel.app/*",
+        "https://*.storymee.com/*",
+        "https://*.vercel.app/*"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "js": [
+        "assets/content_dreamina_main.ts-BjUyrIp3.js"
+      ],
+      "matches": [
+        "https://dreamina.capcut.com/*"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "js": [
+        "assets/content_dreamina_isolated.ts-Ct1aRFyB.js"
+      ],
+      "matches": [
+        "https://dreamina.capcut.com/*"
+      ],
+      "run_at": "document_start",
+      "world": "ISOLATED"
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "options_ui": {
+    "page": "provider-settings.html",
+    "open_in_tab": true
+  },
+  "externally_connectable": {
+    "matches": [
+      "http://localhost:5173/*",
+      "http://127.0.0.1:5173/*",
+      "http://localhost:5174/*",
+      "http://127.0.0.1:5174/*",
+      "http://localhost:5175/*",
+      "http://localhost:3000/*",
+      "http://127.0.0.1:3000/*",
+      "http://localhost:3001/*",
+      "http://127.0.0.1:3001/*",
+      "http://localhost:3002/*",
+      "http://127.0.0.1:3002/*",
+      "https://hub.storymee.com/*",
+      "https://storyboard-workflow.vercel.app/*",
+      "https://world-assets.vercel.app/*",
+      "https://*.storymee.com/*",
+      "https://*.vercel.app/*"
+    ]
+  },
+  "action": {
+    "default_icon": {
+      "16": "public/icon16.png",
+      "32": "public/icon32.png",
+      "48": "public/icon48.png",
+      "128": "public/icon128.png"
+    },
+    "default_title": "Open StoryMee Universal AI Director"
+  },
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "https://labs.google/*"
+      ],
+      "resources": [
+        "assets/content.ts-COmqAX5W.js"
+      ],
+      "use_dynamic_url": false
+    },
+    {
+      "matches": [
+        "http://127.0.0.1:3000/*",
+        "http://127.0.0.1:3001/*",
+        "http://127.0.0.1:3002/*",
+        "http://127.0.0.1:5173/*",
+        "http://127.0.0.1:5174/*",
+        "http://localhost:3000/*",
+        "http://localhost:3001/*",
+        "http://localhost:3002/*",
+        "http://localhost:5173/*",
+        "http://localhost:5174/*",
+        "http://localhost:5175/*",
+        "https://*.storymee.com/*",
+        "https://*.vercel.app/*",
+        "https://hub.storymee.com/*",
+        "https://storyboard-workflow.vercel.app/*"
+      ],
+      "resources": [
+        "assets/inject_detector.ts-IGhWhgRB.js"
+      ],
+      "use_dynamic_url": false
+    },
+    {
+      "matches": [
+        "https://dreamina.capcut.com/*"
+      ],
+      "resources": [
+        "assets/content_dreamina_main.ts-BjUyrIp3.js",
+        "assets/content_dreamina_isolated.ts-Ct1aRFyB.js"
+      ],
+      "use_dynamic_url": false
+    }
+  ]
+}

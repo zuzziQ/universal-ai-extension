@@ -1,0 +1,1 @@
+(function(){(function(){let e=chrome.runtime.id;console.log(`[Universal Ext] Exposing Extension ID:`,e),document.documentElement.setAttribute(`data-storymee-extension-id`,e);let t=new CustomEvent(`STORYMEE_EXTENSION_CONNECTED`,{detail:{extId:e,version:`1.0.0`,isUniversal:!0}});window.dispatchEvent(t)})();})()
