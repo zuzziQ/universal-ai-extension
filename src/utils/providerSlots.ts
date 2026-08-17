@@ -71,6 +71,11 @@ export class ProviderSlotRegistry {
     return this.currentJobs().length;
   }
 
+  hasTask(taskId: string): boolean {
+    for (const active of this.jobs.values()) if (active.has(taskId)) return true;
+    return false;
+  }
+
   providerMaxSlots(): Record<string, number> {
     return Object.fromEntries(Object.keys(this.limits).map(provider => [provider, this.maxSlots(provider)]));
   }

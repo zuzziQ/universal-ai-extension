@@ -480,6 +480,7 @@ export async function generateImage(payload: any, tokens: any, recaptchaToken?: 
   let safetyFilterFailures = 0;
   let invalidArgRetries = 0;
   let networkRetries = 0;
+  let recaptchaRetries = 0;
   let activePrompt = String(prompt || "").trim();
   // Bare media ids only — preserve refs, never silently drop to force success
   const originalMediaIds: string[] = Array.isArray(mediaIds)
@@ -521,7 +522,12 @@ export async function generateImage(payload: any, tokens: any, recaptchaToken?: 
       name: mId.replace(/^media\//, ""),
     }));
 
-  while (safetyFilterFailures < 3 && invalidArgRetries < 3 && networkRetries < 3) {
+  while (
+    safetyFilterFailures < 3 &&
+    invalidArgRetries < 3 &&
+    networkRetries < 3 &&
+    recaptchaRetries < 3
+  ) {
     const requestsArr = Array.from({ length: numOutputs }).map(() => {
       const req: any = {
         seed: Math.floor(Math.random() * 1000000),
@@ -599,7 +605,15 @@ export async function generateImage(payload: any, tokens: any, recaptchaToken?: 
       }
 
       if (status === 403 && (lowerText.includes("recaptcha") || lowerText.includes("unusual_activity"))) {
-        console.warn(`[Universal Ext] reCAPTCHA 403 detected! Requesting a new token...`);
+        recaptchaRetries++;
+        console.warn(
+          `[Universal Ext] reCAPTCHA 403 detected (${recaptchaRetries}/3). Requesting a new token...`
+        );
+        if (recaptchaRetries >= 3) {
+          throw new Error(
+            `Image Generate Error (403): Google blocked reCAPTCHA after ${recaptchaRetries} attempts.`
+          );
+        }
         if (tabId) {
           try {
             await chrome.tabs.reload(tabId);
@@ -614,6 +628,7 @@ export async function generateImage(payload: any, tokens: any, recaptchaToken?: 
             console.error(`[Universal Ext] reCAPTCHA recovery failed:`, recaptchaErr.message);
           }
         }
+        throw new Error(`Image Generate Error (403): ${text.slice(0, 240)}`);
       }
 
       if (isSafetyOrMinorFilterError(status, text) || lowerText.includes("public_error_minor")) {
@@ -706,6 +721,7 @@ export async function generateVideo(payload: any, tokens: any, recaptchaToken?: 
   const { prompt, mediaIds, projectId } = payload;
   let activePrompt = prompt;
   let safetyFilterFailures = 0;
+  let recaptchaRetries = 0;
   
   let apiUrl = "";
   const numOutputs = payload.numOutputs || 1;
@@ -730,7 +746,7 @@ export async function generateVideo(payload: any, tokens: any, recaptchaToken?: 
     "content-type": "application/json"
   };
 
-  while (safetyFilterFailures < 3) {
+  while (safetyFilterFailures < 3 && recaptchaRetries < 3) {
     let requestsArr: any[] = [];
     if (mediaIds && mediaIds.length > 0) {
       apiUrl = "https://aisandbox-pa.googleapis.com/v1/video:batchAsyncGenerateVideoReferenceImages";
@@ -790,7 +806,11 @@ export async function generateVideo(payload: any, tokens: any, recaptchaToken?: 
     if (!ok) {
       const lowerText = text.toLowerCase();
       if (status === 403 && (lowerText.includes("recaptcha") || lowerText.includes("unusual_activity"))) {
-        console.warn(`[Universal Ext] reCAPTCHA 403 detected on video! Requesting new token...`);
+        recaptchaRetries++;
+        console.warn(`[Universal Ext] reCAPTCHA 403 detected on video (${recaptchaRetries}/3).`);
+        if (recaptchaRetries >= 3) {
+          throw new Error(`Generate Error (403): Google blocked video reCAPTCHA after ${recaptchaRetries} attempts.`);
+        }
         if (tabId) {
           try {
             await chrome.tabs.reload(tabId);
@@ -804,6 +824,7 @@ export async function generateVideo(payload: any, tokens: any, recaptchaToken?: 
             console.error(`[Universal Ext] reCAPTCHA video recovery failed:`, recaptchaErr.message);
           }
         }
+        throw new Error(`Generate Error (403): ${text.slice(0, 240)}`);
       }
       if (lowerText.includes("unsafe_generation") || lowerText.includes("public_error_unsafe_generation")) {
         safetyFilterFailures++;
@@ -1103,7 +1124,8 @@ export async function generateText(payload: any, tokens: any, recaptchaToken?: s
   }
 
   let safetyFilterFailures = 0;
-  while (safetyFilterFailures < 3) {
+  let recaptchaRetries = 0;
+  while (safetyFilterFailures < 3 && recaptchaRetries < 3) {
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: headers,
@@ -1118,7 +1140,11 @@ export async function generateText(payload: any, tokens: any, recaptchaToken?: s
     if (!ok) {
       const lowerText = text.toLowerCase();
       if (status === 403 && (lowerText.includes("recaptcha") || lowerText.includes("unusual_activity"))) {
-        console.warn(`[Universal Ext] reCAPTCHA 403 detected on text! Requesting a new token...`);
+        recaptchaRetries++;
+        console.warn(`[Universal Ext] reCAPTCHA 403 detected on text (${recaptchaRetries}/3).`);
+        if (recaptchaRetries >= 3) {
+          throw new Error(`Text Generate Error (403): Google blocked reCAPTCHA after ${recaptchaRetries} attempts.`);
+        }
         if (tabId) {
           try {
             await chrome.tabs.reload(tabId);
@@ -1130,6 +1156,7 @@ export async function generateText(payload: any, tokens: any, recaptchaToken?: s
             console.error(`[Universal Ext] reCAPTCHA text recovery failed:`, recaptchaErr.message);
           }
         }
+        throw new Error(`Text Generate Error (403): ${text.slice(0, 240)}`);
       }
       throw new Error(`Text Generate Error (${status}): ${text}`);
     }
@@ -1245,5 +1272,3 @@ export async function resolveGoogleFlowProject(payload: any, tabId?: number): Pr
   // Final fallback project ID
   return "ba466f2d-083b-4f86-bd6b-0d054a7ed865";
 }
-
-

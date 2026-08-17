@@ -4,6 +4,8 @@ import { normalizeProvider, ProviderSlotRegistry } from './utils/providerSlots';
 let wsManager: ResilientWebSocket | null = null;
 let lastStatusUpdate = 0;
 const providerSlots = new ProviderSlotRegistry();
+const recentlyCompletedJobs = new Map<string, number>();
+const COMPLETED_JOB_TTL_MS = 30 * 60 * 1000;
 /** Last WS URL we connected with — avoid tear-down when only UI provider tab changed */
 let lastConnectedWsUrl = "";
 let connectInFlight: Promise<void> | null = null;
@@ -61,6 +63,22 @@ function slotStatus(completedJobId?: string) {
     disabledProviders: providerSlots.disabledProviders(),
     ...(completedJobId ? { completedJobId } : {}),
   };
+}
+
+function rememberCompletedJob(taskId: string) {
+  const now = Date.now();
+  recentlyCompletedJobs.set(taskId, now);
+  for (const [jobId, completedAt] of recentlyCompletedJobs) {
+    if (now - completedAt > COMPLETED_JOB_TTL_MS) recentlyCompletedJobs.delete(jobId);
+  }
+}
+
+function wasRecentlyCompleted(taskId: string): boolean {
+  const completedAt = recentlyCompletedJobs.get(taskId);
+  if (!completedAt) return false;
+  if (Date.now() - completedAt <= COMPLETED_JOB_TTL_MS) return true;
+  recentlyCompletedJobs.delete(taskId);
+  return false;
 }
 
 async function refreshSlotConfig() {
@@ -274,6 +292,25 @@ async function checkWebSocketInner(forceReconnect: boolean) {
     if (msg.action === "GENERATE") {
       const provider = normalizeProvider(msg.provider || 'gflow');
       const taskId = String(msg.task_id || msg.jobId || '');
+      if (!taskId) {
+        console.warn('[Offscreen] Ignoring GENERATE without task_id');
+        return;
+      }
+      if (providerSlots.hasTask(taskId)) {
+        console.warn(`[Offscreen] Ignoring duplicate active GENERATE for task ${taskId}`);
+        wsManager?.send({
+          action: "JOB_ACK",
+          taskId, task_id: taskId, provider,
+          duplicate: true,
+        });
+        wsManager?.send({ action: 'WORKER_STATUS', ...slotStatus() });
+        return;
+      }
+      if (wasRecentlyCompleted(taskId)) {
+        console.warn(`[Offscreen] Ignoring duplicate completed GENERATE for task ${taskId}`);
+        wsManager?.send({ action: 'WORKER_STATUS', ...slotStatus(taskId) });
+        return;
+      }
       if (!providerSlots.tryAcquire(provider, taskId)) {
           console.warn(`[Offscreen] ${provider} concurrency limit reached. Rejecting job: ${taskId}`);
           if (wsManager) {
@@ -347,6 +384,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         }
 
         wsManager.send(payload);
+        rememberCompletedJob(String(taskId));
         providerSlots.release(String(taskId));
         wsManager.send({ action: 'WORKER_STATUS', ...slotStatus(String(taskId)) });
         sendResponse({ success: true });

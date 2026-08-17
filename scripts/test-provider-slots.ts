@@ -7,10 +7,13 @@ assert.equal(normalizeProvider('google_flow'), 'GFLOW');
 
 const slots = new ProviderSlotRegistry();
 assert.equal(slots.tryAcquire('gflow', 'job-1'), true);
+assert.equal(slots.hasTask('job-1'), true);
+assert.equal(slots.hasTask('missing-job'), false);
 assert.equal(slots.tryAcquire('GOOGLE_FLOW', 'job-2'), true);
 assert.equal(slots.tryAcquire('gflow', 'job-3'), false);
 assert.deepEqual(slots.currentJobs().sort(), ['job-1', 'job-2']);
 assert.equal(slots.release('job-1'), true);
+assert.equal(slots.hasTask('job-1'), false);
 assert.equal(slots.tryAcquire('gflow', 'job-3'), true);
 assert.equal(slots.activeCount('gflow'), 2);
 assert.equal(slots.maxSlots('gflow'), 2);
