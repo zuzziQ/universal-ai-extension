@@ -2,6 +2,7 @@ import { IAIDriver, GeneratePayload, GenerateResult } from '../../core/AIDriver.
 import { sha256Hex, awsV4Auth, md5, generateUUID } from '../../utils/crypto';
 import { calculateCRC32, getImageDimensions } from '../../utils/binary';
 import { syncCookies } from '../../utils/cookies';
+import { waitForTabComplete } from '../google-flow/GoogleLabsDriver';
 
 function getResponseObject(record: any): any {
   if (!record) return null;
@@ -367,8 +368,8 @@ export class DreaminaDriver implements IAIDriver {
         }
       }
       
-      // Chờ tab load ổn định và SDK bảo mật khởi tạo (6 giây)
-      await new Promise(r => setTimeout(r, 6000));
+      // Chờ tab load hoàn tất kèm timeout fallback 5 giây
+      await waitForTabComplete(tab.id!, 5000);
       const initTabState = await chrome.tabs.get(tab.id!).catch(() => null);
       console.log(`[DreaminaDriver] Injected tab URL: ${initTabState ? initTabState.url : 'unknown'}`);
 
@@ -1188,8 +1189,8 @@ export class DreaminaDriver implements IAIDriver {
         console.log(`[DreaminaDriver] Reloading tab to establish WebSocket progress tracking for video job...`);
         try {
           await chrome.tabs.reload(tab.id!);
-          // Chờ 6 giây sau reload để tab load và WebSocket kết nối lại
-          await new Promise(r => setTimeout(r, 6000));
+          // Chờ tab load hoàn tất sau reload kèm timeout fallback 5 giây
+          await waitForTabComplete(tab.id!, 5000);
           console.log(`[DreaminaDriver] Tab reloaded and ready for progress tracking.`);
         } catch (reloadErr: any) {
           console.warn(`[DreaminaDriver] Failed to reload tab:`, reloadErr.message);
@@ -1213,7 +1214,8 @@ export class DreaminaDriver implements IAIDriver {
       let emptyPollCount = 0;
 
       for (let i = 0; i < maxRetries; i++) {
-        await new Promise(r => setTimeout(r, 5000)); // Chờ 5 giây mỗi lần
+        const delay = i === 0 ? 1200 : (i === 1 ? 2000 : (i === 2 ? 3500 : 5000));
+        await new Promise(r => setTimeout(r, delay));
         
         const pollTime = Math.floor(Date.now() / 1000).toString();
         const pollSign = md5('9e2c|' + pollPath.slice(-7) + '|7|8.4.0|' + pollTime + '||11ac');

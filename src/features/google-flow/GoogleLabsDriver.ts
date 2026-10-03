@@ -10,6 +10,46 @@ import {
   createGoogleLabsEntity
 } from './googleLabsApi';
 
+export function waitForTabComplete(tabId: number, timeoutMs = 8000): Promise<boolean> {
+  return new Promise((resolve) => {
+    let resolved = false;
+    let timer: any = null;
+
+    const cleanup = () => {
+      if (timer) clearTimeout(timer);
+      chrome.tabs.onUpdated.removeListener(onUpdated);
+    };
+
+    const onUpdated = (updatedTabId: number, changeInfo: chrome.tabs.OnUpdatedInfo) => {
+      if (updatedTabId === tabId && changeInfo.status === 'complete') {
+        if (!resolved) {
+          resolved = true;
+          cleanup();
+          resolve(true);
+        }
+      }
+    };
+
+    chrome.tabs.onUpdated.addListener(onUpdated);
+
+    chrome.tabs.get(tabId).then((tab) => {
+      if (tab && tab.status === 'complete' && !resolved) {
+        resolved = true;
+        cleanup();
+        resolve(true);
+      }
+    }).catch(() => {});
+
+    timer = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+        resolve(false);
+      }
+    }, timeoutMs);
+  });
+}
+
 export class GoogleLabsDriver implements IAIDriver {
   async generate(payload: GeneratePayload, tokens: { oauthToken?: string; cookies?: any[] }): Promise<GenerateResult> {
     // Each concurrent job owns a hidden Labs tab. Sharing/navigating one tab was
@@ -73,7 +113,7 @@ export class GoogleLabsDriver implements IAIDriver {
           console.log(`[GoogleLabsDriver] Navigating Google Labs tab to project: ${activeProjectId}`);
           await chrome.tabs.update(tabId, { url: targetUrl, active: false });
           // Wait briefly for navigation to process
-          await new Promise(r => setTimeout(r, 4000));
+          await waitForTabComplete(tabId, 4000);
         }
       } catch (navErr: any) {
         console.warn(`[GoogleLabsDriver] Optional project navigation failed:`, navErr.message);
@@ -321,9 +361,10 @@ export class GoogleLabsDriver implements IAIDriver {
 
   private async createDedicatedLabsTab(): Promise<number> {
     return new Promise((resolve) => {
-      chrome.tabs.create({ url: "https://labs.google/fx/tools/flow", active: false }, (newTab) => {
+      chrome.tabs.create({ url: "https://labs.google/fx/tools/flow", active: false }, async (newTab) => {
         if (newTab && newTab.id) {
-          setTimeout(() => resolve(newTab.id!), 3000);
+          await waitForTabComplete(newTab.id, 4000);
+          resolve(newTab.id);
         } else {
           resolve(-1);
         }

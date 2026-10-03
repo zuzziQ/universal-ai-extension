@@ -387,7 +387,7 @@ export const JobCard = memo(function JobCard({
       {/* Cảnh báo chi tiết nếu media error */}
       {mediaError && job.resultUrl && (
         <div className="text-[8.5px] text-amber-500 bg-amber-955/10 p-1.5 rounded border border-amber-500/10 mt-1 leading-normal w-full">
-          ⚠️ <strong>Lỗi SSL/Hết hạn:</strong> Click <strong>Xem gốc</strong> bên trên để bypass cảnh báo chứng chỉ SSL của Chrome.
+          ⚠️ <strong>Không tải được ảnh (404/Lỗi mạng):</strong> Click <strong>Xem gốc</strong> bên trên để kiểm tra tệp hoặc đường truyền.
         </div>
       )}
     </div>

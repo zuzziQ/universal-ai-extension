@@ -497,48 +497,8 @@ async function handleGenerateJob(msg: any) {
         }, tokens);
 
         if (result.success) {
-          // Downscale, compress & upload GFLOW output images to MinIO storage to bypass Google Labs 24h link expiration
           if (result.outputUrls && result.outputUrls.length > 0 && (msg.media_type || 'image') === 'image') {
-            const originalUrl = result.outputUrls[0];
-            console.log("[StoryMee] GFLOW image generated. Requesting client compression for original URL:", originalUrl);
-            try {
-              const googleTabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
-                chrome.tabs.query({ url: "*://labs.google/*" }, resolve);
-              });
-              const targetTabId = googleTabs[0]?.id;
-              
-              if (targetTabId) {
-                const compressRes: any = await new Promise((resolve) => {
-                  chrome.tabs.sendMessage(targetTabId, { 
-                    action: 'COMPRESS_IMAGE_URL', 
-                    url: originalUrl 
-                  }, (res: any) => {
-                    if (chrome.runtime.lastError) {
-                      resolve({ error: chrome.runtime.lastError.message });
-                    } else {
-                      resolve(res);
-                    }
-                  });
-                });
-                
-                if (compressRes && compressRes.success && compressRes.base64) {
-                  const uploadedUrl = await uploadImageToMinIO(compressRes.base64);
-                  if (uploadedUrl) {
-                    console.log("[StoryMee] GFLOW permanent uploaded URL:", uploadedUrl);
-                    result.outputUrls[0] = uploadedUrl;
-                    if (result.rawResponse && result.rawResponse.images && result.rawResponse.images[0]) {
-                      result.rawResponse.images[0].url = uploadedUrl;
-                    }
-                  }
-                } else {
-                  console.warn("[StoryMee] Client failed to compress image. Error:", compressRes?.error);
-                }
-              } else {
-                console.warn("[StoryMee] Google Labs tab not found for compression fallback.");
-              }
-            } catch (compressErr: any) {
-              console.error("[StoryMee] GFLOW compression/upload workflow exception:", compressErr.message);
-            }
+            console.log("[StoryMee] GFLOW image generated, delegating persistence to backend asset sync");
           }
 
           await saveOrUpdateJob({
@@ -1419,73 +1379,4 @@ registerAlarmListener();
 // Immediate initialization
 setupOffscreen(true).catch(console.error);
 registerDnrRules().catch(console.error);
-
-async function uploadImageToMinIO(base64Image: string): Promise<string | null> {
-  try {
-    const config = await chrome.storage.local.get(["gflowUrl", "hub_api_key"]) as any;
-    const gflowUrl = config.gflowUrl || "https://hub.storymee.com";
-    const apiKey = config.hub_api_key || "";
-    if (!apiKey) {
-      throw new Error("Missing hub_api_key — cannot request presigned upload URL");
-    }
-    
-    console.log("[StoryMee] Requesting presigned upload URL from Hub:", `${gflowUrl}/v1/storage/presign`);
-    
-    // 1. Request presigned URL from Hub
-    const presignRes = await fetch(`${gflowUrl}/v1/storage/presign`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        bucket: 'media-output',
-        filename: `gflow-output-${Date.now()}.jpg`
-      })
-    });
-    
-    if (!presignRes.ok) {
-      throw new Error(`Failed to get presigned URL: ${presignRes.statusText}`);
-    }
-    
-    const presignData = await presignRes.json();
-    const { upload_url, object_name, bucket } = presignData;
-    
-    if (!upload_url) {
-      throw new Error("No upload URL returned from Hub");
-    }
-    
-    // 2. Convert Base64 back to binary Blob
-    const base64Data = base64Image.replace(/^data:image\/jpeg;base64,/, "");
-    const binary = atob(base64Data);
-    const array = new ArrayBuffer(binary.length);
-    const view = new Uint8Array(array);
-    for (let i = 0; i < binary.length; i++) {
-      view[i] = binary.charCodeAt(i);
-    }
-    const blob = new Blob([array], { type: 'image/jpeg' });
-    
-    // 3. Upload binary blob directly to MinIO
-    console.log("[StoryMee] Uploading compressed blob directly to MinIO...");
-    const uploadRes = await fetch(upload_url, {
-      method: 'PUT',
-      body: blob,
-      headers: {
-        'Content-Type': 'image/jpeg'
-      }
-    });
-    
-    if (!uploadRes.ok) {
-      throw new Error(`Failed to upload to storage: ${uploadRes.statusText}`);
-    }
-    
-    console.log("[StoryMee] Image uploaded successfully to storage:", object_name);
-    
-    // 4. Return the Cloudflare SSL proxied public URL
-    return `https://storage.storymee.com/${bucket}/${object_name}`;
-  } catch (err: any) {
-    console.error("[StoryMee] uploadImageToMinIO failed:", err.message);
-    return null;
-  }
-}
 

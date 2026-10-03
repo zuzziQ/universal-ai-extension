@@ -278,6 +278,7 @@ export default function App() {
     if (jobsFetchLock.current) return;
     jobsFetchLock.current = true;
     setIsFetchingJobs(true);
+    setFailedHosts([]);
     try {
       // 1) Always surface local cache first
       let localJobs: SavedJob[] = [];
@@ -1702,17 +1703,28 @@ export default function App() {
                     <div className="flex gap-2 text-xs">
                       <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-bold">SSL / host lỗi: {host}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Bypass SSL trong tab mới rồi refresh jobs.</p>
+                        <p className="font-bold">Host/ảnh không tải được: {host}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Kiểm tra kết nối hoặc mở tab mới để kiểm tra.</p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => window.open(`https://${host}/`, '_blank')}
-                      className="bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1 justify-center"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" /> Bypass SSL
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => window.open(`https://${host}/`, '_blank')}
+                        className="bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1 justify-center"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" /> Kiểm tra Host
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFailedHosts((prev) => prev.filter((h) => h !== host))}
+                        className="p-1.5 hover:bg-amber-500/20 text-amber-400 hover:text-amber-200 rounded-lg transition-colors inline-flex items-center justify-center"
+                        title="Đóng thông báo"
+                        aria-label="Dismiss"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1741,8 +1753,7 @@ export default function App() {
                         const host = parsed.host.toLowerCase();
                         if (
                           parsed.protocol === 'https:' &&
-                          (host.includes('storymee.com') ||
-                            host.includes('localhost') ||
+                          (host.includes('localhost') ||
                             host.includes('127.0.0.1') ||
                             host.startsWith('192.168.') ||
                             host.startsWith('10.'))
