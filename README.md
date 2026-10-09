@@ -128,19 +128,25 @@ Extension hỗ trợ kiến trúc cắm rút (**Driver Pattern**) cho các nền
 
 ---
 
-## 4. Giao Diện Người Dùng (UI & Features)
+## 4. Giao Diện Người Dùng & Hình Ảnh Thực Tế (Visual Showcase)
 
 Extension cung cấp 2 chế độ hiển thị linh hoạt được xây dựng hoàn toàn bằng **React 19**, **Tailwind CSS v4** và **Zustand**:
 
-1. **Sidepanel (Chrome Side Panel):**
-   - Mở nhanh ở cạnh phải trình duyệt mà không làm che mất trang web đang xem.
-   - Theo dõi trạng thái kết nối WebSocket (`ONLINE` / `DISCONNECTED`).
-   - Giám sát tiến độ job đang xử lý (Generating, Polling, Uploading) và xem trước hình ảnh/video kết quả ngay lập tức.
-2. **Full Dashboard (`index.html`):**
-   - Mở toàn màn hình để quản trị chuyên sâu.
-   - **Tab Jobs:** Lịch sử chi tiết toàn bộ các job đã xử lý, filter theo trạng thái, xem thời gian thực thi, xem URL kết quả và tải lại nếu cần.
-   - **Tab Accounts:** Quản lý danh sách tài khoản của từng Provider, hiển thị số điểm credit còn lại, trạng thái hoạt động của từng email.
-   - **Tab Settings:** Cấu hình Gateway Hub URL, Hub API Key, Worker Name, và tinh chỉnh các tùy chọn nâng cao.
+### 4.1 Bảng Điều Khiển Toàn Diện (Full Dashboard — Jobs History & Monitor)
+> Quản lý tập trung toàn bộ tiến trình render, lọc đa chiều theo Provider (Google Flow, Dreamina, Picsart, TopView) và trạng thái công việc (Pending, Processing, Done, Failed).
+
+![Full Dashboard Jobs Monitor](docs/images/dashboard_jobs.png)
+
+### 4.2 Kho Quản Trị & Xoay Vòng Tài Khoản (Multi-Account Pool)
+> Hiển thị hạn mức credit / điểm thưởng thực tế của từng tài khoản, hỗ trợ cơ chế gán tài khoản tự động (Auto-switch) và giải phóng (Release) tức thời khi tài khoản hết hạn mức.
+
+![Multi-Account Pool Management](docs/images/dashboard_accounts.png)
+
+### 4.3 Giám Sát Cạnh Trình Duyệt (Chrome Side Panel) & Cấu Hình Kết Nối
+| Chrome Side Panel (Thu nhỏ 390px) | Cấu Hình Kết Nối Gateway & API Keys |
+|:---:|:---:|
+| ![Chrome Side Panel](docs/images/sidepanel_view.png) | ![Gateway & Provider Settings](docs/images/dashboard_settings.png) |
+| *Giám sát realtime trạng thái Online/Offline, Job đang chạy và kết quả mới nhất ngay khi đang duyệt web.* | *Thiết lập địa chỉ StoryMee Hub Gateway, Worker ID và phân quyền API Key cho từng provider.* |
 
 ---
 
