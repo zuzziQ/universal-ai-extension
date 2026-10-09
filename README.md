@@ -142,11 +142,12 @@ Extension cung cấp 2 chế độ hiển thị linh hoạt được xây dựng
 
 ![Multi-Account Pool Management](docs/images/dashboard_accounts.png)
 
-### 4.3 Giám Sát Cạnh Trình Duyệt (Chrome Side Panel) & Cấu Hình Kết Nối
-| Chrome Side Panel (Thu nhỏ 390px) | Cấu Hình Kết Nối Gateway & API Keys |
-|:---:|:---:|
-| ![Chrome Side Panel](docs/images/sidepanel_view.png) | ![Gateway & Provider Settings](docs/images/dashboard_settings.png) |
-| *Giám sát realtime trạng thái Online/Offline, Job đang chạy và kết quả mới nhất ngay khi đang duyệt web.* | *Thiết lập địa chỉ StoryMee Hub Gateway, Worker ID và phân quyền API Key cho từng provider.* |
+### 4.3 Giám Sát Cạnh Trình Duyệt (Chrome Side Panel) & Cấu Hình Hệ Thống
+
+| Side Panel Giám Sát | Side Panel Cài Đặt | Bảng Cài Đặt Đầy Đủ (Full Dashboard Settings) |
+|:---:|:---:|:---:|
+| ![Chrome Side Panel](docs/images/sidepanel_view.png) | ![Side Panel Cài Đặt](docs/images/sidepanel_settings.png) | ![Gateway & Provider Settings](docs/images/dashboard_settings.png) |
+| *Giám sát realtime Online/Offline và tiến độ render ngay khi duyệt web.* | *Quản lý nhanh phiên đăng nhập, tài khoản active và hạn mức credit.* | *Thiết lập địa chỉ StoryMee Hub Gateway, Worker ID và phân quyền API Key.* |
 
 ---
 
