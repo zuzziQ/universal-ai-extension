@@ -1187,6 +1187,28 @@ export async function resolveGoogleFlowProject(payload: any, tabId?: number): Pr
 
   const tokens = await chrome.storage.local.get(["oauthToken", "xBrowserValidation", "xClientData"]);
 
+  // 0. If user has an active Google Flow project tab open, use its real project ID
+  try {
+    const projectTabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+      chrome.tabs.query({ url: "*://labs.google/fx/tools/flow/project/*" }, resolve);
+    });
+    for (const pt of projectTabs) {
+      if (pt.url) {
+        const match = pt.url.match(/project\/([a-z0-9\-]+)/);
+        if (match && match[1] && match[1] !== 'default') {
+          console.log(`[GoogleLabsApi] Found active project ID from open tab: ${match[1]}`);
+          if (projectId && isUuid(projectId)) {
+            chrome.storage.local.set({ [`gflow_project_map_${projectId}`]: match[1] }).catch(() => {});
+          }
+          if (projectName) {
+            chrome.storage.local.set({ [`gflow_project_map_${projectName}`]: match[1] }).catch(() => {});
+          }
+          return match[1];
+        }
+      }
+    }
+  } catch (e) {}
+
   // 1. If it's a UUID, check if it's mapped to a Google Flow Project ID
   if (projectId && isUuid(projectId)) {
     const mapKey = `gflow_project_map_${projectId}`;

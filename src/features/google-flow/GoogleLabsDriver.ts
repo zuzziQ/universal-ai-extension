@@ -52,13 +52,13 @@ export function waitForTabComplete(tabId: number, timeoutMs = 8000): Promise<boo
 
 export class GoogleLabsDriver implements IAIDriver {
   async generate(payload: GeneratePayload, tokens: { oauthToken?: string; cookies?: any[] }): Promise<GenerateResult> {
-    // Each concurrent job owns a hidden Labs tab. Sharing/navigating one tab was
-    // the real reason the old global mutex was necessary and capped throughput at 1.
-    const tabId = await this.createDedicatedLabsTab();
+    const { tabId, isDedicated } = await this.getOrCreateLabsTab();
     try {
       return await this.executeGenerate(payload, tokens, tabId);
     } finally {
-      if (tabId > 0) chrome.tabs.remove(tabId).catch(() => {});
+      if (isDedicated && tabId > 0) {
+        chrome.tabs.remove(tabId).catch(() => {});
+      }
     }
   }
 
@@ -359,15 +359,30 @@ export class GoogleLabsDriver implements IAIDriver {
     return normalized;
   }
 
-  private async createDedicatedLabsTab(): Promise<number> {
+  private async getOrCreateLabsTab(): Promise<{ tabId: number; isDedicated: boolean }> {
     return new Promise((resolve) => {
-      chrome.tabs.create({ url: "https://labs.google/fx/tools/flow", active: false }, async (newTab) => {
-        if (newTab && newTab.id) {
-          await waitForTabComplete(newTab.id, 4000);
-          resolve(newTab.id);
-        } else {
-          resolve(-1);
+      // 1. Prioritize any open project tab
+      chrome.tabs.query({ url: "*://labs.google/fx/tools/flow/project/*" }, (tabs) => {
+        if (tabs && tabs.length > 0 && tabs[0].id) {
+          resolve({ tabId: tabs[0].id, isDedicated: false });
+          return;
         }
+        // 2. Any labs.google tab
+        chrome.tabs.query({ url: "*://labs.google/*" }, (tabs) => {
+          if (tabs && tabs.length > 0 && tabs[0].id) {
+            resolve({ tabId: tabs[0].id, isDedicated: false });
+            return;
+          }
+          // 3. Fallback: create dedicated tab
+          chrome.tabs.create({ url: "https://labs.google/fx/tools/flow", active: false }, async (newTab) => {
+            if (newTab && newTab.id) {
+              await waitForTabComplete(newTab.id, 6000);
+              resolve({ tabId: newTab.id, isDedicated: true });
+            } else {
+              resolve({ tabId: -1, isDedicated: true });
+            }
+          });
+        });
       });
     });
   }
